@@ -1,4 +1,4 @@
-# 
+# Security Camera Project
 ## A software project for detecting and capturing movement ##
 
 The Security Camera Project is a comprehensive solution designed for motion detection and video capture, aimed at enhancing surveillance systems. This software leverages webcam technology to monitor designated areas, detect any movement, and record video footage when activity is identified. Key functionalities include frame extraction, video processing, and the ability to send recorded footage via email.
