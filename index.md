@@ -1,4 +1,4 @@
-# Security Camera Project
+# Security Camera Projec
 
 ## A software project for detecting and capturing movement
 
