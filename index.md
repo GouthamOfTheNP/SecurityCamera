@@ -8,7 +8,7 @@ The Security Camera Project is a comprehensive solution designed for motion dete
 - **Motion Detection**: The software continuously monitors video streams and triggers recordings only when movement is detected, optimizing storage and processing resources.
 - **Frame Extraction**: Captured video frames are analyzed, and rectangular regions of interest are identified to isolate the most relevant parts of the footage.
 - **Video Processing**: After detecting movement, the system extracts and merges video segments, creating a final video that highlights the identified activity.
-- **Email Integration**: The recorded video footage can be automatically sent to a predefined email address for remote monitoring, using the integrated `sendemailpy3` library.
+- **Email Integration**: The recorded video footage can be automatically sent to a predefined email address for remote monitoring, using the self-developed `SendEmailPy3` library.
 - **Customizability**: Users can configure parameters such as motion sensitivity, video length, and email notification settings to meet their specific security needs.
 
 ### Commercial Use Notice
@@ -24,9 +24,7 @@ This project is part of a commercial product. While the software itself is open 
 ### Technologies Used:
 - **Python**: Core programming language used to develop the project.
 - **OpenCV**: For video capture, motion detection, and frame processing.
-- **PyInstaller**: To package the software into a standalone executable for distribution on systems without Python installed.
-- **sendemailpy3**: For sending the recorded video via email notifications.
-- **Platane/snk GitHub Action**: For generating visual content and tracking project updates.
+- **SendEmailPy3**: For sending the recorded video via email notifications.
 
 ### License
 
