@@ -53,7 +53,7 @@ class EmailWindow(QMainWindow):
 
 	def write_email(self):
 		with open("emails.txt", "a") as file:
-			file.write(self.email_area.text() + "\n")
+			file.writelines([email + "\n" for email in self.email_area.text().split()])
 		self.success_area.setText("Email(s) saved successfully")
 		self.close()
 
