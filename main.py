@@ -5,8 +5,67 @@ import time
 import sendemailpy3 as smpy
 from threading import Thread
 from datetime import datetime
+from PyQt6.QtWidgets import QMainWindow, QApplication, QLineEdit, QWidget, QVBoxLayout, QSizePolicy, QPushButton
+import sys
 
-receiver_email = input("What is the receiver's email address: ")
+
+class EmailWindow(QMainWindow):
+	def __init__(self):
+		super().__init__()
+		self.error_code = ""
+
+		central_widget = QWidget(self)
+		self.setCentralWidget(central_widget)
+		self.setWindowTitle("Receiver Email Address")
+		self.setMinimumSize(300, 160)
+
+		self.success_area = QLineEdit(self)
+		self.success_area.setReadOnly(True)
+		self.success_area.setPlaceholderText(self.error_code)
+		self.success_area.hide()
+
+		self.email_area = QLineEdit(self)
+		self.email_area.setPlaceholderText("Enter receiver(s') email address(es), separated by spaces")
+		self.email_area.returnPressed.connect(self.write_email)
+
+		submit_button = QPushButton("Submit", self)
+		submit_button.clicked.connect(self.write_email)
+
+		self.email_area.setMinimumHeight(30)
+		self.email_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+		submit_button.setMinimumHeight(30)
+		submit_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+		self.success_area.setMinimumHeight(30)
+		self.success_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+		layout = QVBoxLayout(central_widget)
+		layout.addWidget(self.email_area)
+		layout.addStretch()
+		layout.addWidget(submit_button)
+		layout.addStretch()
+		layout.addWidget(self.success_area)
+		layout.addStretch()
+		layout.setContentsMargins(10, 20, 10, 20)
+		layout.setSpacing(0)
+		self.setLayout(layout)
+
+		self.show()
+
+	def write_email(self):
+		with open("emails.txt", "a") as file:
+			file.write(self.email_area.text() + "\n")
+		self.success_area.setText("Email(s) saved successfully")
+		self.close()
+
+if __name__ == "__main__":
+	app = QApplication(sys.argv)
+	window = EmailWindow()
+	app.exec()
+
+
+with open("emails.txt", "r") as file:
+	receiver_email = [email.strip() for email in file.readlines()]
+
 
 def create_video(video_frames, video_name):
 	height, width, layers = video_frames[0].shape
@@ -50,9 +109,9 @@ def zip_video_file(video_file):
 	return zip_file_name
 
 
-def send_message(receiver_email):
-	sender_email = os.getenv('SENDER_EMAIL')
-	sender_password = os.getenv('SENDER_PASS')
+def send_message(emails):
+	sender_email = "noreplysmtpimportant@gmail.com"
+	sender_password = "yqfd dnzf oyqe hvph"
 
 	subject = "Intruder detected at your camera's location!"
 	body = "Download the following videos to see what happened at what time."
@@ -61,8 +120,9 @@ def send_message(receiver_email):
 		for record in video_records_detected:
 			zipped_record = zip_video_file(record)
 			try:
-				smpy.send_gmail(subject, body, receiver_email, sender_email, sender_password, zipped_record)
-				print(f"Email sent to {receiver_email} with attachment: {zipped_record}")
+				for email in emails:
+					smpy.send_gmail(subject, body, email, sender_email, sender_password, filepath=zipped_record)
+					print(f"Email sent to {email} with attachment: {zipped_record}")
 			except Exception as e:
 				print(f"Error sending email: {e}")
 
