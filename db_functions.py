@@ -68,6 +68,6 @@ def create_devices_db():
 	with connection:
 		cursor.execute("CREATE TABLE IF NOT EXISTS devices"
 		               "(id INTEGER PRIMARY KEY AUTOINCREMENT, device TEXT NOT NULL, "
-		               "stock TEXT NOT NULL, identifier TEXT NOT NULL)")
+		               "stock TEXT NOT NULL, identifier TEXT NOT NULL, image TEXT NOT NULL)")
 	connection.commit()
 	connection.close()

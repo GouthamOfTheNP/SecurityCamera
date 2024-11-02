@@ -1,4 +1,4 @@
-from db_functions import add_user, user_exists, create_table, update_devices, verify_password, verify_email
+from db_functions import add_user, user_exists, create_table, verify_password, verify_email
 from flask import render_template, request, Flask, session
 from flask.views import MethodView
 from wtforms import Form, StringField, IntegerField, BooleanField
@@ -6,6 +6,7 @@ from wtforms.fields.simple import SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
 from sendemailpy3 import send_gmail
 import os
+import sqlite3
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -86,7 +87,17 @@ class MobileAppPage(MethodView):
 
 class SecurityCameraPage(MethodView):
 	def get(self):
-		return render_template("security_camera.html")
+		connection = sqlite3.connect("devices.db")
+		cursor = connection.cursor()
+		cursor.execute("SELECT device, stock, image FROM devices")
+		results = cursor.fetchall()
+		connection.commit()
+		connection.close()
+		data = [
+			{"device": result[0], "stock": result[1], "image": result[2]}
+			for result in results
+		]
+		return render_template("security_camera.html", data=data)
 
 
 class SignupForm(Form):

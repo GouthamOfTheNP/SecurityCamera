@@ -5,6 +5,8 @@ from PyQt6.QtWidgets import (QApplication, QPushButton, QLabel, QLineEdit, QDial
                              QMessageBox, QFileDialog)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
+from werkzeug.serving import connection_dropped_errors
+
 from db_functions import create_devices_db
 
 create_devices_db()
@@ -157,15 +159,23 @@ class InsertDialog(QDialog):
 	def add_device(self):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
-		cursor.execute('INSERT INTO devices (device, stock, identifier, image) VALUES (?, ?, ?, ?)',
-		               (self.device_name.text(), self.stock.text(), self.identification.text(),self.file_path))
-		connection.commit()
-		connection.close()
+		if (self.device_name.text() != "" and self.stock.text() != "" and self.identification.text() != ""
+				and self.file_path != ""):
+			if "static/product_images/" in self.file_path:
+				cursor.execute('INSERT INTO devices (device, stock, identifier, image) VALUES (?, ?, ?, ?)',
+			               (self.device_name.text(), self.stock.text(), self.identification.text(),
+			                str(self.file_path).split('static/product_images/')[-1]))
+			else:
+				QMessageBox.information(self, "Error", "Please select a valid image file located in the static folder")
+			connection.commit()
+			connection.close()
+			self.close()
+		else:
+			QMessageBox.information(self, "Error", "Please fill in all required fields.")
+
 		main_window.load_data()
-		self.close()
 
 
-# This class is used to search for students
 class SearchDialog(QDialog):
 	def __init__(self):
 		super().__init__()
@@ -194,10 +204,10 @@ class SearchDialog(QDialog):
 			items = main_window.table.findItems(result[1], Qt.MatchFlag.MatchFixedString)
 			for item in items:
 				main_window.table.selectRow(item.row())
+				connection.close()
+				self.close()
 		except TypeError:
 			QMessageBox.information(self, "Search Results", "No device found with that name or identifier.")
-		connection.close()
-		self.close()
 
 
 class EditDialog(QDialog):
@@ -239,15 +249,20 @@ class EditDialog(QDialog):
 		self.setLayout(layout)
 
 	def open_file_dialog(self):
-		self.file_path, _ = QFileDialog.getOpenFileName(self, 'Open File', self.image_path, '*.png *.jpg *.jpeg *.svg *.webp *.tiff')
+		self.file_path, _ = QFileDialog.getOpenFileName(self, 'Open File', self.image_path,
+		                                                '*.png *.jpg *.jpeg *.svg *.webp *.tiff')
 		if self.file_path:
 			print(f"Selected file: {self.file_path}")
 
 	def edit_device(self):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
-		cursor.execute("UPDATE devices SET device = ?, stock = ?, identifier = ?, image = ? WHERE id = ?",
-		               (self.device_name.text(), self.stock.text(), self.identification.text(), self.file_path, self.s_id))
+		if "/" not in self.image_path or "static/product_images/" in self.file_path:
+			cursor.execute("UPDATE devices SET device = ?, stock = ?, identifier = ?, image = ? WHERE id = ?",
+		               (self.device_name.text(), self.stock.text(), self.identification.text(),
+		                self.file_path if self.file_path is not None else self.image_path, self.s_id))
+		else:
+			QMessageBox.information(self, "Error", "Please select a valid image file located in the static folder")
 		connection.commit()
 		connection.close()
 		self.close()
