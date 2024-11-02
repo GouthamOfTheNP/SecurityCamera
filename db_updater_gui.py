@@ -2,7 +2,7 @@ import sqlite3
 import sys
 from PyQt6.QtWidgets import (QApplication, QPushButton, QLabel, QLineEdit, QDialog, QVBoxLayout, QComboBox,
                              QMainWindow, QTableWidget, QStatusBar, QTableWidgetItem, QToolBar, QGridLayout,
-                             QMessageBox)
+                             QMessageBox, QFileDialog)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
 from db_functions import create_devices_db
@@ -14,7 +14,7 @@ class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
 		self.setWindowTitle('Device Management System: Peak State')
-		self.setMinimumSize(400, 500)
+		self.setMinimumSize(500, 500)
 
 		file_menu_item = self.menuBar().addMenu('&File')
 		help_menu_item = self.menuBar().addMenu('&Help')
@@ -40,8 +40,8 @@ class MainWindow(QMainWindow):
 		file_menu_item.addAction(search_action)
 
 		self.table = QTableWidget()
-		self.table.setColumnCount(4)
-		self.table.setHorizontalHeaderLabels(['ID', 'Device', 'Stock', 'Identification'])
+		self.table.setColumnCount(5)
+		self.table.setHorizontalHeaderLabels(['ID', 'Device', 'Stock', 'Identification', 'Image'])
 		self.table.verticalHeader().setVisible(False)
 		self.setCentralWidget(self.table)
 
@@ -121,6 +121,7 @@ class MainWindow(QMainWindow):
 class InsertDialog(QDialog):
 	def __init__(self):
 		super().__init__()
+		self.file_path = None
 		self.setWindowTitle('Add Student')
 		self.setFixedSize(300, 200)
 
@@ -138,17 +139,26 @@ class InsertDialog(QDialog):
 		self.identification.setPlaceholderText("Identification")
 		layout.addWidget(self.identification)
 
+		self.file_button = QPushButton("Select Image")
+		self.file_button.clicked.connect(self.open_file_dialog)
+		layout.addWidget(self.file_button)
+
 		button = QPushButton('Add Device')
 		button.clicked.connect(self.add_device)
 		layout.addWidget(button)
 
 		self.setLayout(layout)
 
+	def open_file_dialog(self):
+		self.file_path, _ = QFileDialog.getOpenFileName(self, 'Open File', '', '*.png *.jpg *.jpeg *.svg *.webp *.tiff')
+		if self.file_path:
+			print(f"Selected file: {self.file_path}")
+
 	def add_device(self):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
-		cursor.execute('INSERT INTO devices (device, stock, identifier) VALUES (?, ?, ?)',
-		               (self.device_name.text(), self.stock.text(), self.identification.text()))
+		cursor.execute('INSERT INTO devices (device, stock, identifier, image) VALUES (?, ?, ?, ?)',
+		               (self.device_name.text(), self.stock.text(), self.identification.text(),self.file_path))
 		connection.commit()
 		connection.close()
 		main_window.load_data()
@@ -193,6 +203,7 @@ class SearchDialog(QDialog):
 class EditDialog(QDialog):
 	def __init__(self):
 		super().__init__()
+		self.file_path = None
 		self.setWindowTitle('Edit Device')
 		self.setFixedSize(300, 200)
 
@@ -214,6 +225,11 @@ class EditDialog(QDialog):
 		self.identification.setPlaceholderText("ID")
 		layout.addWidget(self.identification)
 
+		self.image_path = main_window.table.item(index, 4).text()
+		self.file_button = QPushButton("Select Image")
+		self.file_button.clicked.connect(self.open_file_dialog)
+		layout.addWidget(self.file_button)
+
 		self.s_id = main_window.table.item(index, 0).text()
 
 		button = QPushButton("Edit Device")
@@ -222,11 +238,16 @@ class EditDialog(QDialog):
 
 		self.setLayout(layout)
 
+	def open_file_dialog(self):
+		self.file_path, _ = QFileDialog.getOpenFileName(self, 'Open File', self.image_path, '*.png *.jpg *.jpeg *.svg *.webp *.tiff')
+		if self.file_path:
+			print(f"Selected file: {self.file_path}")
+
 	def edit_device(self):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
-		cursor.execute("UPDATE devices SET device = ?, stock = ?, identifier = ? WHERE id = ?",
-		               (self.device_name.text(), self.stock.text(), self.identification.text(), self.s_id))
+		cursor.execute("UPDATE devices SET device = ?, stock = ?, identifier = ?, image = ? WHERE id = ?",
+		               (self.device_name.text(), self.stock.text(), self.identification.text(), self.file_path, self.s_id))
 		connection.commit()
 		connection.close()
 		self.close()
