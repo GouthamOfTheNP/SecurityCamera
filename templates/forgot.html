@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+	<meta charset="UTF-8">
+	<title>Vigilance Solutions</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" href="../static/styles.css">
+	<link rel='icon' href="{{ url_for('static', filename='icon.ico') }}" type='image/x-icon'>
+</head>
+<body>
+	<header>
+		<h1>Forgot Password</h1>
+	</header>
+    <p>Enter your email address below and we'll send you a link to reset your password.</p>
+    <form action="/forgot" method="post">
+        {{ forgot_form.email.label }} {{ forgot_form.email }} <br>
+        {{ forgot_form.submit }} <br>
+	    <br> <a href="/login">Already have an account? Log in here.</a> <br>
+	    <br> {{ error_code }}
+    </form>
+</body>
+</html>

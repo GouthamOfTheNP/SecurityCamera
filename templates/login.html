@@ -10,6 +10,16 @@
 <body>
 	<header>
 		<h1>Log In</h1>
+		<h2>Sign in with your account</h2>
+		<form action="/login" method="post">
+			{{ login_form.username.label }} {{login_form.username }} <br>
+			{{ login_form.password.label }} {{login_form.password }} <br>
+			{{ login_form.submit }} <br>
+			<br> {{ error_code }}
+        </form> <br>
+		<a href="/">Return Home</a> <br> <br>
+		<a href="/forgot">Forgot your password?</a> <br> <br>
+		<a href="/signup">Don't have an account? Sign up here.</a>
 	</header>
 </body>
 </html>
