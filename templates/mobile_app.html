@@ -9,6 +9,19 @@
 </head>
 <body>
 	<header>
+		<nav>
+			<ul class="navbar">
+				<li><a href="/">Home</a></li>
+				<li><a href="/security-camera">Security Cameras</a></li>
+				<li></li>
+				{% if not session['logged_in'] %}
+					<li><a href="/signup" class="signup-btn" id="signup">Signup</a></li>
+					<li></li>
+					<li><a href="/login" class="signup-btn" id="login">Login</a></li>
+				{% endif %}
+			</ul>
+		</nav>
+		<br> <br>
 		<h1>Download our Mobile App!</h1>
 		<h2>Stay updated with the latest security features and updates.</h2>
 		<div class="store-links">
@@ -18,5 +31,11 @@
 			<img src="{{ url_for ('static', filename='appstore.svg') }} " alt="Get it on the App Store"></a>
 		</div>
 	</header>
+	<footer>
+		<p>
+			&copy; 2024 Vigilance Solutions. All rights reserved. |
+			<a href="privacy">Privacy Policy</a>
+		</p>
+	</footer>
 </body>
 </html>
