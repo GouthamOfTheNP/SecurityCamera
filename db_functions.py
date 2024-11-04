@@ -2,13 +2,13 @@ import sqlite3
 import bcrypt
 
 
-def create_table():
+def create_users_db():
 	connection = sqlite3.connect("users.db")
 	connection.row_factory = sqlite3.Row
 	cursor = connection.cursor()
 	with connection:
 		cursor.execute("CREATE TABLE IF NOT EXISTS users "
-		               "(username TEXT NOT NULL, password TEXT NOT NULL, email TEXT NOT NULL, devices TEXT NOT NULL)")
+		               "(username TEXT NOT NULL, password TEXT NOT NULL, email TEXT NOT NULL, devices TEXT)")
 		connection.commit()
 
 

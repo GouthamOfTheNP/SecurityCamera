@@ -5,7 +5,10 @@ import time
 import sendemailpy3 as smpy
 from threading import Thread
 from datetime import datetime
+import requests
 
+
+SERVER_URL = "http://127.0.0.1:5000/upload_frame"
 with open("emails.txt", "r") as file:
 	receiver_email = [email.strip() for email in file.readlines()]
 
@@ -53,8 +56,8 @@ def zip_video_file(video_file):
 
 
 def send_message(emails):
-	sender_email = "noreplysmtpimportant@gmail.com"
-	sender_password = "yqfd dnzf oyqe hvph"
+	sender_email = os.getenv("USERNAME_SENDER")
+	sender_password = os.getenv("PASSWORD_SENDER")
 
 	subject = "Intruder detected at your camera's location!"
 	body = "Download the following videos to see what happened at what time."
@@ -87,6 +90,8 @@ merge_time_multiplier = 12
 merge_time = image_time * merge_time_multiplier
 
 video = cv2.VideoCapture(0)
+if not video.isOpened():
+	print("Error: Camera not accessible.")
 fps = int(video.get(cv2.CAP_PROP_FPS))
 frames_per_video = 5 * fps
 rectangle = None
@@ -115,6 +120,18 @@ while True:
 		x, y, w, h = cv2.boundingRect(contour)
 		rectangle = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
 
+	_, buffer = cv2.imencode('.jpg', frame)
+	frame_data = buffer.tobytes()
+	with open("device_id.txt", "r") as f:
+		info = f.readlines()
+		user_id = info[1]
+	response = requests.post(SERVER_URL, files={'frame': frame_data}, data={'user_id': user_id})
+	if response.status_code != 200:
+		print(response)
+		print(f"Error: Failed to upload frame, status code {response.status_code}")
+	else:
+		print("Frame uploaded successfully")
+
 	cv2.imshow("Video", frame)
 	key = cv2.waitKey(1)
 	images.append(frame)
@@ -129,13 +146,13 @@ while True:
 		video_files.append(video_name)
 		images = []
 
-	if len(video_files) % 12 == 0 and len(video_files) != 0:
+	if len(video_files) % 20 == 0 and len(video_files) != 0:
 		merged_name = os.path.join(save_dir, f"merged_time_stamp_{datetime.now()}.mp4")
 		merge_videos(video_files, merged_name)
 		video_files = []
 		video_records.append(merged_name)
 
-	if iterations % 150 == 0:
+	if iterations % 3600 == 0:
 		if image_files_detected and len(image_files_detected) != 0:
 			image_files_video_detected = []
 			for f in image_files_detected:

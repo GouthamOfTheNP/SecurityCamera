@@ -1,28 +1,36 @@
-from db_functions import add_user, user_exists, create_table, verify_password, verify_email
-from flask import render_template, request, Flask, session
+from db_functions import add_user, user_exists, create_users_db, verify_password, verify_email, create_devices_db
+from flask import render_template, request, Flask, session, redirect, url_for, jsonify
 from flask.views import MethodView
+from flask_cors import CORS
 from wtforms import Form, StringField, IntegerField, BooleanField
 from wtforms.fields.simple import SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
 from sendemailpy3 import send_gmail
 import os
 import sqlite3
+import time
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = os.urandom(24)
 app.config["SESSION_TYPE"] = "memcache"
 
-connection = create_table()
+create_users_db()
+create_devices_db()
 
 
 class MainPage(MethodView):
 	def get(self):
+		if session.get('logged_in'):
+			return render_template("index.html", username=session.get('username'))
 		return render_template("index.html")
 
 
 class SignUpPage(MethodView):
 	def get(self):
 		signup_form = SignupForm()
+		if session.get("logged_in"):
+			return redirect(url_for("main_page"))
 		return render_template("signup.html", signup_form=signup_form)
 
 	def post(self):
@@ -35,6 +43,10 @@ class SignUpPage(MethodView):
 		if not user_exists(username):
 			if password == confirm_password:
 				add_user(username, password, email)
+				session['logged_in'] = True
+				session['username'] = username
+				time.sleep(2)
+				return redirect(url_for('main_page'))
 			else:
 				error_code = "Passwords do not match"
 		else:
@@ -44,6 +56,8 @@ class SignUpPage(MethodView):
 
 class LoginPage(MethodView):
 	def get(self):
+		if session.get("logged_in"):
+			return redirect(url_for("main_page"))
 		login_form = LoginForm()
 		return render_template("login.html", login_form=login_form)
 
@@ -52,11 +66,17 @@ class LoginPage(MethodView):
 		username = str(login_form.username.data)
 		password = str(login_form.password.data)
 		error_code = "Successfully logged in"
-		if verify_password(username, password):
-			session['logged_in'] = True
-			session['username'] = username
-		else:
-			error_code = "Invalid username or password"
+		try:
+			try:
+				if verify_password(username, password):
+					session['logged_in'] = True
+					session['username'] = username
+					time.sleep(2)
+					return redirect(url_for('main_page'))
+			except TypeError as e:
+				error_code = "Invalid username or password"
+		except TypeError as e:
+			error_code = "An error occurred while logging in. Please try again."
 		return render_template("login.html", login_form=login_form, error_code=error_code)
 
 
@@ -85,6 +105,19 @@ class MobileAppPage(MethodView):
 		return render_template("mobile_app.html")
 
 
+class LogoutPage(MethodView):
+	def get(self):
+		try:
+			session.pop('logged_in', None)
+			session.pop('username', None)
+			time.sleep(1)
+			return redirect(url_for('main_page'))
+		except Exception:
+			return render_template('logout.html')
+	def post(self):
+		return redirect(url_for('main_page'))
+
+
 class SecurityCameraPage(MethodView):
 	def get(self):
 		connection = sqlite3.connect("devices.db")
@@ -98,6 +131,21 @@ class SecurityCameraPage(MethodView):
 			for result in results
 		]
 		return render_template("security_camera.html", data=data)
+
+
+class PrivacyPage(MethodView):
+	def get(self):
+		return render_template("privacy.html")
+
+
+@app.route('/478cb55db6df5b5b4f9d38e081161edf')
+def get_devices():
+	connection = sqlite3.connect("users.db")
+	cursor = connection.cursor()
+	cursor.execute("SELECT username, devices FROM users")
+	devices = cursor.fetchall()
+	connection.close()
+	return jsonify(devices)
 
 
 class SignupForm(Form):
@@ -129,5 +177,8 @@ app.add_url_rule('/login', view_func=LoginPage.as_view('login_page'))
 app.add_url_rule('/forgot', view_func=ForgotPage.as_view('forgot_page'))
 app.add_url_rule('/mobile-app', view_func=MobileAppPage.as_view('mobile_app_page'))
 app.add_url_rule('/security-camera', view_func=SecurityCameraPage.as_view('security_camera_page'))
+app.add_url_rule('/logout', view_func=LogoutPage.as_view('logout_page'))
+app.add_url_rule('/privacy', view_func=PrivacyPage.as_view('privacy_page'))
+
 if __name__ == '__main__':
 	app.run(debug=True)
