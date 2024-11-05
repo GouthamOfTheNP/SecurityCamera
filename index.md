@@ -26,7 +26,8 @@ This project is part of a commercial product. While the software itself is open 
 - **Python**: Core programming language used to develop the project.
 - **OpenCV**: For video capture, motion detection, and frame processing.
 - **SendEmailPy3**: For sending the recorded video via email notifications.
-- **PyQt6**: For creating a desktop GUI that records the user's preferred receiving email address(es).
+- **Flask**: For creating a user-friendly web interface that allows for users to sign up and view their camera footage.
+- **PyQt6**: For creating a desktop GUI that allows a user-friendly program for accessing databases.
 
 ### License
 
