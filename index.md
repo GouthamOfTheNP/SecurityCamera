@@ -1,5 +1,24 @@
 # Security Camera Project
 
+---
+layout: default
+title: "Security Camera Project"
+---
+
+<div style="text-align: left;">
+    <h1 style="color: #3b82f6;">Minimal Theme</h1>
+    <div style="border: 4px solid black; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;">
+        <p style="font-size: 24px; font-weight: bold;">Logo</p>
+    </div>
+    <p>Minimal is a theme for GitHub Pages.</p>
+    <a href="https://github.com/your-repo-link" target="_blank" style="color: #3b82f6; text-decoration: none;">View the Project on GitHub</a>
+    <br><br>
+    <div>
+        <a href="https://github.com/your-repo-link/archive/main.zip" class="button">Download ZIP File</a>
+        <a href="https://github.com/your-repo-link/tarball/main" class="button">Download TAR Ball</a>
+        <a href="https://github.com/your-repo-link" class="button">View On GitHub</a>
+    </div>
+</div>
 
 ## A software project for detecting and capturing movement ##
 
