@@ -1,4 +1,5 @@
 theme: jekyll-theme-minimal
 title: Security Camera - GouthamNP
 show_downloads: true
+logo: /assets/images/iOS Security Camera.png
 description: The Security Camera project is both a framework for other security camera projects and a demonstration of a fully integrated security company.
