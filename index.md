@@ -1,9 +1,5 @@
 # Security Camera Project
 
----
-layout: default
-title: "Security Camera Project"
----
 
 <div style="text-align: left;">
     <h1 style="color: #3b82f6;">Minimal Theme</h1>
