@@ -4,11 +4,13 @@ from flask.views import MethodView
 from flask_cors import CORS
 from wtforms import Form, StringField, IntegerField, BooleanField
 from wtforms.fields.simple import SubmitField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
+from wtforms.validators import DataRequired, Email, Length, EqualTo
 from sendemailpy3 import send_gmail
 import os
 import sqlite3
 import time
+import numpy as np
+import cv2
 
 app = Flask(__name__)
 CORS(app)
@@ -18,12 +20,40 @@ app.config["SESSION_TYPE"] = "memcache"
 create_users_db()
 create_devices_db()
 
+user_frames = {}
+
+
+@app.route('/57152cbec2b16cbbfca4b135ab57740b83a47bcb/upload_frame', methods=['POST'])
+def upload_frame():
+	user_id = request.form.get('user_id')
+	if 'frame' not in request.files:
+		return "No frame found", 400
+
+	frame = request.files['frame'].read()
+
+	np_frame = np.frombuffer(frame, np.uint8)
+	image = cv2.imdecode(np_frame, cv2.IMREAD_COLOR)
+
+	if user_id:
+		user_frames[user_id] = image
+
+	return "Frame received", 200
+
 
 class MainPage(MethodView):
 	def get(self):
 		if session.get('logged_in'):
-			return render_template("index.html", username=session.get('username'))
+			return render_template("index.html", username=session.get('username'), user_id=session.get('username'))
 		return render_template("index.html")
+
+
+@app.route('/stream_default')
+def stream_default():
+	if user_frames:
+		first_user_id = next(iter(user_frames))
+		_, buffer = cv2.imencode('.jpg', user_frames[first_user_id])
+		return buffer.tobytes(), 200, {'Content-Type': 'image/jpeg'}
+	return "No frames available", 404
 
 
 class SignUpPage(MethodView):
@@ -114,6 +144,7 @@ class LogoutPage(MethodView):
 			return redirect(url_for('main_page'))
 		except Exception:
 			return render_template('logout.html')
+
 	def post(self):
 		return redirect(url_for('main_page'))
 
@@ -138,7 +169,8 @@ class PrivacyPage(MethodView):
 		return render_template("privacy.html")
 
 
-@app.route('/478cb55db6df5b5b4f9d38e081161edf')
+@app.route('/478cb55db6df5b5b4f9d38e081161edf/3ec984b8ebcb95979aafc140ab3175f7/afb3132ee624f40beae950c57ae0f3a5'
+           '/5f16518ece37398319606c81556fc42b')
 def get_devices():
 	connection = sqlite3.connect("users.db")
 	cursor = connection.cursor()
