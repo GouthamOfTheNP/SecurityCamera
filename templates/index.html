@@ -21,19 +21,17 @@
 		function startStreaming() {
 			const imageElement = document.getElementById('live-stream');
 			setInterval(() => {
-				fetch('/stream_default')
+				fetch("/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/{{ username }}")
 					.then(response => {
 						if (response.ok) {
 							return response.blob();
-						} else {
-							throw new Error('No frames available');
 						}
 					})
 					.then(imageBlob => {
 						const imageUrl = URL.createObjectURL(imageBlob);
 						imageElement.src = imageUrl;
 					})
-					.catch(error => console.error('Error fetching frame:', error));
+					.catch(() => console.log('Error fetching frame:'));
 			}, 1000);
 		}
 
