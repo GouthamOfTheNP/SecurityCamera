@@ -43,15 +43,15 @@ def upload_frame():
 class MainPage(MethodView):
 	def get(self):
 		if session.get('logged_in'):
-			return render_template("index.html", username=session.get('username'), user_id=session.get('username'))
+			return render_template("index.html", username=session.get('username'))
 		return render_template("index.html")
 
 
-@app.route('/stream_default')
-def stream_default():
+@app.route('/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a'
+           '/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/<user_id>')
+def stream(user_id):
 	if user_frames:
-		first_user_id = next(iter(user_frames))
-		_, buffer = cv2.imencode('.jpg', user_frames[first_user_id])
+		_, buffer = cv2.imencode('.jpg', user_frames[user_id])
 		return buffer.tobytes(), 200, {'Content-Type': 'image/jpeg'}
 	return "No frames available", 404
 
