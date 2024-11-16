@@ -213,4 +213,4 @@ app.add_url_rule('/logout', view_func=LogoutPage.as_view('logout_page'))
 app.add_url_rule('/privacy', view_func=PrivacyPage.as_view('privacy_page'))
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	app.run()
