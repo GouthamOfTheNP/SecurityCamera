@@ -1,5 +1,7 @@
+import random
+from datetime import datetime
 from db_functions import add_user, user_exists, create_users_db, verify_password, verify_email, create_devices_db
-from flask import render_template, request, Flask, session, redirect, url_for, jsonify
+from flask import render_template, request, Flask, session, redirect, url_for, jsonify, abort
 from flask.views import MethodView
 from flask_cors import CORS
 from wtforms import Form, StringField, IntegerField, BooleanField
@@ -11,6 +13,8 @@ import sqlite3
 import time
 import numpy as np
 import cv2
+import requests
+import threading
 
 app = Flask(__name__)
 CORS(app)
@@ -21,6 +25,8 @@ create_users_db()
 create_devices_db()
 
 user_frames = {}
+
+rand_num = random.randint(100000, 10000000)
 
 
 @app.route('/57152cbec2b16cbbfca4b135ab57740b83a47bcb/upload_frame', methods=['POST'])
@@ -170,14 +176,34 @@ class PrivacyPage(MethodView):
 
 
 @app.route('/478cb55db6df5b5b4f9d38e081161edf/3ec984b8ebcb95979aafc140ab3175f7/afb3132ee624f40beae950c57ae0f3a5'
-           '/5f16518ece37398319606c81556fc42b')
-def get_devices():
-	connection = sqlite3.connect("users.db")
-	cursor = connection.cursor()
-	cursor.execute("SELECT username, devices FROM users")
-	devices = cursor.fetchall()
-	connection.close()
-	return jsonify(devices)
+           '/5f16518ece37398319606c81556fc42b/<key>')
+def get_devices(key):
+	if int(key) == requests.get(f"{request.host_url.rstrip('/')}/5f16518ece37398319606c81556fc42b/key_generator/exfkey"
+	                            "/445jgjdakeyfnk").json():
+		connection = sqlite3.connect("users.db")
+		cursor = connection.cursor()
+		cursor.execute("SELECT username, devices FROM users")
+		devices = cursor.fetchall()
+		connection.close()
+		return jsonify(devices)
+	return jsonify({"error": "Invalid credentials"}), 401
+
+
+lock = threading.Lock()
+
+
+@app.route('/5f16518ece37398319606c81556fc42b/key_generator/<username>/<password>')
+def key_generator(username, password):
+	valid_users = ("exfkey", "cxvkey")
+	valid_passwords = ("rrfcelDkey345", "445jgjdakeyfnk")
+	if username in valid_users and password in valid_passwords:
+		if datetime.now().minute == 0:
+			global rand_num
+			rand_num= random.randint(1000000, 100000000)
+		with lock:
+			return jsonify(rand_num)
+	return abort(404)
+
 
 
 class SignupForm(Form):
