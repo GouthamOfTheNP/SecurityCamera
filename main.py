@@ -205,7 +205,6 @@ def key_generator(username, password):
 	return abort(404)
 
 
-
 class SignupForm(Form):
 	email = StringField("Email: ", validators=[DataRequired(), Email()])
 	username = StringField("Username: ", validators=[DataRequired()])
