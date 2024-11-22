@@ -15,7 +15,7 @@ The Security Camera Project is a comprehensive solution designed for motion dete
 
 ### Commercial Use Notice
 
-This project is part of a commercial product. While the software itself is open source and can be freely used, the final product created from this software cannot be redistributed or sold without permission. The intention is to provide individuals and businesses with customizable security software, but the end product remains under restricted distribution.
+This project is part of a commercial product. While the software itself is open source and can be freely used, the final product created from this software cannot be redistributed or sold without permission. The intention is to provide individuals and businesses with customizable security software, but the end product remains under restricted distribution. The link to the prototype of this project is [(https://vigilancesolutions.pythonanywhere.com/)](https://vigilancesolutions.pythonanywhere.com/)
 
 ### How It Works:
 1. **Continuous Video Monitoring**: The software runs continuously, capturing real-time footage from a connected webcam.
