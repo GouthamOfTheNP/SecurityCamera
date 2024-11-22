@@ -234,7 +234,9 @@ def key_generator(username, password):
 @app.before_request
 def store_previous_page():
 	if (request.endpoint not in ['login_page', 'signup_page', 'logout_page', 'forgot_page']
-			and not request.endpoint.startswith('static') and request.method == 'GET'):
+				and not request.endpoint.startswith('static') and request.method == 'GET' and not request.url.endswith(
+				'/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a'
+				'/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/<user_id>')):
 		session['previous_page'] = request.url
 
 
