@@ -165,7 +165,8 @@ class LogoutPage(MethodView):
 			session.pop('logged_in', None)
 			session.pop('username', None)
 			time.sleep(1)
-			previous_page = request.referrer
+			previous_page = session.get('previous_page', '/')
+			session.pop('previous_page', None)
 			if previous_page != request.url:
 				return redirect(previous_page)
 			return redirect(url_for("main_page"))
@@ -173,7 +174,8 @@ class LogoutPage(MethodView):
 			return render_template('logout.html')
 
 	def post(self):
-		previous_page = request.referrer
+		previous_page = session.get('previous_page', '/')
+		session.pop('previous_page', None)
 		if previous_page != request.url:
 			return redirect(previous_page)
 		return redirect(url_for("main_page"))
