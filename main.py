@@ -20,6 +20,8 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = os.urandom(24)
 app.config["SESSION_TYPE"] = "memcache"
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 create_users_db()
 create_devices_db()
@@ -66,6 +68,10 @@ class SignUpPage(MethodView):
 	def get(self):
 		signup_form = SignupForm()
 		if session.get("logged_in"):
+			previous_page = session.get('previous_page', '/')
+			session.pop('previous_page', None)
+			if previous_page != request.url:
+				return redirect(previous_page)
 			return redirect(url_for("main_page"))
 		return render_template("signup.html", signup_form=signup_form)
 
@@ -82,7 +88,11 @@ class SignUpPage(MethodView):
 				session['logged_in'] = True
 				session['username'] = username
 				time.sleep(2)
-				return redirect(url_for('main_page'))
+				previous_page = session.get('previous_page', '/')
+				session.pop('previous_page', None)
+				if previous_page != request.url:
+					return redirect(previous_page)
+				return redirect(url_for("main_page"))
 			else:
 				error_code = "Passwords do not match"
 		else:
@@ -93,6 +103,10 @@ class SignUpPage(MethodView):
 class LoginPage(MethodView):
 	def get(self):
 		if session.get("logged_in"):
+			previous_page = session.get('previous_page', '/')
+			session.pop('previous_page', None)
+			if previous_page != request.url:
+				return redirect(previous_page)
 			return redirect(url_for("main_page"))
 		login_form = LoginForm()
 		return render_template("login.html", login_form=login_form)
@@ -108,7 +122,11 @@ class LoginPage(MethodView):
 					session['logged_in'] = True
 					session['username'] = username
 					time.sleep(2)
-					return redirect(url_for('main_page'))
+					previous_page = session.get('previous_page', '/')
+					session.pop('previous_page', None)
+					if previous_page != request.url:
+						return redirect(previous_page)
+					return redirect(url_for("main_page"))
 			except TypeError as e:
 				error_code = "Invalid username or password"
 		except TypeError as e:
@@ -147,12 +165,18 @@ class LogoutPage(MethodView):
 			session.pop('logged_in', None)
 			session.pop('username', None)
 			time.sleep(1)
-			return redirect(url_for('main_page'))
+			previous_page = request.referrer
+			if previous_page != request.url:
+				return redirect(previous_page)
+			return redirect(url_for("main_page"))
 		except Exception:
 			return render_template('logout.html')
 
 	def post(self):
-		return redirect(url_for('main_page'))
+		previous_page = request.referrer
+		if previous_page != request.url:
+			return redirect(previous_page)
+		return redirect(url_for("main_page"))
 
 
 class SecurityCameraPage(MethodView):
@@ -199,10 +223,17 @@ def key_generator(username, password):
 	if username in valid_users and password in valid_passwords:
 		if datetime.now().minute == 0:
 			global rand_num
-			rand_num= random.randint(1000000, 100000000)
+			rand_num = random.randint(1000000, 100000000)
 		with lock:
 			return jsonify(rand_num)
 	return abort(404)
+
+
+@app.before_request
+def store_previous_page():
+	if (request.endpoint not in ['login_page', 'signup_page', 'logout_page', 'forgot_page']
+			and not request.endpoint.startswith('static') and request.method == 'GET'):
+		session['previous_page'] = request.url
 
 
 class SignupForm(Form):
