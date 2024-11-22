@@ -19,6 +19,9 @@
 					<li></li>
 					<li><a href="/login" class="signup-btn" id="login">Login</a></li>
 				{% endif %}
+				{% if session['logged_in'] %}
+					<li><a href="/logout" class="signup-btn" id="logout">Logout</a></li>
+				{ % endif %}
 			</ul>
 		</nav>
 		<br> <br>
