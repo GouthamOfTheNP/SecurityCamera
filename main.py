@@ -201,6 +201,18 @@ class PrivacyPage(MethodView):
 		return render_template("privacy.html")
 
 
+class ProductPageInd(MethodView):
+	def get(self, product_id):
+		connection = sqlite3.connect("devices.db")
+		cursor = connection.cursor()
+		cursor.execute("SELECT device, stock, image FROM devices where identifier = ?", (product_id,))
+		results = cursor.fetchone()
+		connection.commit()
+		connection.close()
+		data = {"device": results[0], "stock": results[1], "image": results[2]}
+		return render_template("product.html", data=data)
+
+
 @app.route('/478cb55db6df5b5b4f9d38e081161edf/3ec984b8ebcb95979aafc140ab3175f7/afb3132ee624f40beae950c57ae0f3a5'
            '/5f16518ece37398319606c81556fc42b/<key>')
 def get_devices(key):
@@ -234,9 +246,11 @@ def key_generator(username, password):
 @app.before_request
 def store_previous_page():
 	if (request.endpoint not in ['login_page', 'signup_page', 'logout_page', 'forgot_page']
-				and not request.endpoint.startswith('static') and request.method == 'GET' and not request.url.endswith(
-				'/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a'
-				'/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/<user_id>')):
+				and not request.endpoint.startswith('static') and
+				request.method == 'GET' and not "/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d"
+				                                "/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a/"
+				                                "caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/"
+				                                in request.url):
 		session['previous_page'] = request.url
 
 
@@ -271,6 +285,7 @@ app.add_url_rule('/mobile-app', view_func=MobileAppPage.as_view('mobile_app_page
 app.add_url_rule('/security-camera', view_func=SecurityCameraPage.as_view('security_camera_page'))
 app.add_url_rule('/logout', view_func=LogoutPage.as_view('logout_page'))
 app.add_url_rule('/privacy', view_func=PrivacyPage.as_view('privacy_page'))
+app.add_url_rule('/product/<product_id>', view_func=ProductPageInd.as_view('product_page_ind'))
 
 if __name__ == '__main__':
 	app.run()
