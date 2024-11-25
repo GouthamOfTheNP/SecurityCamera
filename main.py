@@ -1,3 +1,4 @@
+import math
 import random
 from datetime import datetime
 from db_functions import add_user, user_exists, create_users_db, verify_password, verify_email, create_devices_db
@@ -15,6 +16,8 @@ import numpy as np
 import cv2
 import requests
 import threading
+import bcrypt
+import decimal
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +30,12 @@ create_users_db()
 create_devices_db()
 
 user_frames = {}
+alphabets = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i': 9, 'j': 10, 'k': 11, 'l': 12, 'm': 13,
+             'n': 14, 'o': 15, 'p': 16, 'q': 17, 'r': 18, 's': 19, 't': 20, 'u': 21, 'v': 22, 'w': 23, 'x': 24, 'y': 25,
+             'z': 26, 'A': 27, 'B': 28, 'C': 29, 'D': 30, 'E': 31, 'F': 32, 'G': 33, 'H': 34, 'I': 35, 'J': 36, 'K': 37,
+             'L': 38, 'M': 39, 'N': 40, 'O': 41, 'P': 42, 'Q': 43, 'R': 44, 'S': 45, 'T': 46, 'U': 47, 'V': 48, 'W': 49,
+             'X': 50, 'Y': 51, 'Z': 52}
+alpha_inverted = {v: k for k, v in alphabets.items()} | {v + 52: k for k, v in alphabets.items()}
 
 rand_num = random.randint(100000, 10000000)
 
@@ -144,14 +153,50 @@ class ForgotPage(MethodView):
 		email = str(forgot_form.email.data)
 		error_code = "Email successfully sent"
 		verification_tuple = verify_email(email)
+		connection = sqlite3.connect('users.db')
+		cursor = connection.cursor()
+		cursor.execute("SELECT username FROM users WHERE email=?", (email,))
+		username = username_hash(cursor.fetchone()[0], random.randint(0, 45))
+		connection.commit()
+		cursor.close()
+		connection.close()
 		if verification_tuple[0]:
 			session["reset_token"] = True
 			send_gmail("Password Reset",
-			           "Your password has been reset. Please login with your new password.",
+			           f"Password reset link for Vigilance Solutions: {request.url_root.rstrip("/") + 
+			                                                           url_for("reset_page", user=username)}",
 			           verification_tuple[1], os.getenv("USERNAME_SENDER"), os.getenv("PASSWORD_SENDER"))
 		else:
 			error_code = "Invalid email address"
 		return render_template("forgot.html", forgot_form=forgot_form, error_code=error_code)
+
+
+class ResetPage(MethodView):
+	def get(self, user):
+		reset_form = ResetForm()
+		user = username_decrypt(user)
+		try:
+			return render_template("reset.html", reset_form=reset_form, user=user)
+		except Exception as e:
+			return abort(404)
+
+	def post(self, user):
+		user = username_decrypt(user)
+		reset_form = ResetForm(request.form)
+		try:
+			password = str(reset_form.password.data)
+			connection = sqlite3.connect("users.db")
+			cursor = connection.cursor()
+			cursor.execute("UPDATE users SET password=? WHERE username=?",
+			               (bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()), user))
+			connection.commit()
+			cursor.close()
+			connection.close()
+			error_code = "Password successfully reset"
+			return render_template("reset.html", reset_form=reset_form, user=user, error_code=error_code)
+		except Exception as e:
+			error_code = "An error occurred while resetting the password. Please try again."
+			return render_template("reset.html", reset_form=reset_form, user=user, error_code=error_code)
 
 
 class MobileAppPage(MethodView):
@@ -185,12 +230,12 @@ class SecurityCameraPage(MethodView):
 	def get(self):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
-		cursor.execute("SELECT device, stock, image FROM devices")
+		cursor.execute("SELECT device, stock, image, identifier FROM devices")
 		results = cursor.fetchall()
 		connection.commit()
 		connection.close()
 		data = [
-			{"device": result[0], "stock": result[1], "image": result[2]}
+			{"device": result[0], "stock": result[1], "image": result[2], "identifier": result[3]}
 			for result in results
 		]
 		return render_template("security_camera.html", data=data)
@@ -248,10 +293,42 @@ def store_previous_page():
 	if (request.endpoint not in ['login_page', 'signup_page', 'logout_page', 'forgot_page']
 				and not request.endpoint.startswith('static') and
 				request.method == 'GET' and not "/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d"
-				                                "/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a/"
-				                                "caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/"
+				                                "/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a"
+				                                "/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/"
 				                                in request.url):
 		session['previous_page'] = request.url
+
+
+def username_hash(username, salt):
+	username = list(username)
+
+	for i in range(len(username)):
+		username[i] = (alphabets[username[i]] + salt)
+	for i in range(len(username)):
+		username[i] = alpha_inverted[username[i]]
+	for i in range(len(list(str(salt)))):
+		username.insert(random.randint(0, len(username)), list(str(salt))[i])
+	return ''.join(username)
+
+
+def username_decrypt(username):
+	salt = []
+	username = list(username)
+	print(username)
+	print(len(username))
+	for char in username[:]:
+		if char.isdigit():
+			salt.append(username.pop(username.index(char)))
+	salt = int(''.join(salt))
+	alpha_decrypt = {k: v + (52 if v <= salt else 0) for k, v in alphabets.items()}
+	print(alpha_decrypt)
+
+	decrypted_username = []
+	for char in username:
+		decrypted_value = (alpha_decrypt[char] - salt)
+		decrypted_username.append(alpha_inverted[decrypted_value])
+
+	return ''.join(decrypted_username)
 
 
 class SignupForm(Form):
@@ -277,6 +354,16 @@ class ForgotForm(Form):
 	submit = SubmitField("Submit")
 
 
+class ResetForm(Form):
+	password = StringField("New Password: ", validators=[DataRequired(),
+	                                                     Length(min=8,
+	                                                            message="Password must be at least 8 characters long")])
+	confirm_password = StringField("Confirm Password: ",
+	                               validators=[DataRequired(),
+	                                           EqualTo('password', message="Passwords must match")])
+	submit = SubmitField("Submit")
+
+
 app.add_url_rule('/', view_func=MainPage.as_view('main_page'))
 app.add_url_rule('/signup', view_func=SignUpPage.as_view('signup_page'))
 app.add_url_rule('/login', view_func=LoginPage.as_view('login_page'))
@@ -286,6 +373,7 @@ app.add_url_rule('/security-camera', view_func=SecurityCameraPage.as_view('secur
 app.add_url_rule('/logout', view_func=LogoutPage.as_view('logout_page'))
 app.add_url_rule('/privacy', view_func=PrivacyPage.as_view('privacy_page'))
 app.add_url_rule('/product/<product_id>', view_func=ProductPageInd.as_view('product_page_ind'))
+app.add_url_rule('/reset/<user>', view_func=ResetPage.as_view('reset_page'))
 
 if __name__ == '__main__':
 	app.run()
