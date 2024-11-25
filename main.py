@@ -174,14 +174,16 @@ class ForgotPage(MethodView):
 class ResetPage(MethodView):
 	def get(self, user):
 		reset_form = ResetForm()
-		user = username_decrypt(user)
+		if user != "<user>":
+			user = username_decrypt(user)
 		try:
 			return render_template("reset.html", reset_form=reset_form, user=user)
 		except Exception as e:
 			return abort(404)
 
 	def post(self, user):
-		user = username_decrypt(user)
+		if user != "<user>":
+			user = username_decrypt(user)
 		reset_form = ResetForm(request.form)
 		try:
 			password = str(reset_form.password.data)
