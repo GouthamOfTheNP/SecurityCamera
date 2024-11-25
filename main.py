@@ -1,11 +1,10 @@
-import math
 import random
 from datetime import datetime
 from db_functions import add_user, user_exists, create_users_db, verify_password, verify_email, create_devices_db
 from flask import render_template, request, Flask, session, redirect, url_for, jsonify, abort
 from flask.views import MethodView
 from flask_cors import CORS
-from wtforms import Form, StringField, IntegerField, BooleanField
+from wtforms import Form, StringField
 from wtforms.fields.simple import SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 from sendemailpy3 import send_gmail
@@ -17,7 +16,6 @@ import cv2
 import requests
 import threading
 import bcrypt
-import decimal
 
 app = Flask(__name__)
 CORS(app)
@@ -38,23 +36,19 @@ alphabets = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i'
 alpha_inverted = {v: k for k, v in alphabets.items()} | {v + 52: k for k, v in alphabets.items()}
 
 rand_num = random.randint(100000, 10000000)
+lock = threading.Lock()
 
 
-@app.route('/57152cbec2b16cbbfca4b135ab57740b83a47bcb/upload_frame', methods=['POST'])
-def upload_frame():
-	user_id = request.form.get('user_id')
-	if 'frame' not in request.files:
-		return "No frame found", 400
+def update_rand_num():
+	global rand_num
+	with lock:
+		rand_num = random.randint(1000000, 100000000)
+	now = datetime.now()
+	seconds_until_next_hour = 3600 - (now.minute * 60 + now.second)
+	threading.Timer(seconds_until_next_hour, update_rand_num).start()
 
-	frame = request.files['frame'].read()
 
-	np_frame = np.frombuffer(frame, np.uint8)
-	image = cv2.imdecode(np_frame, cv2.IMREAD_COLOR)
-
-	if user_id:
-		user_frames[user_id] = image
-
-	return "Frame received", 200
+update_rand_num()
 
 
 class MainPage(MethodView):
@@ -62,15 +56,6 @@ class MainPage(MethodView):
 		if session.get('logged_in'):
 			return render_template("index.html", username=session.get('username'))
 		return render_template("index.html")
-
-
-@app.route('/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a'
-           '/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/<user_id>')
-def stream(user_id):
-	if user_frames:
-		_, buffer = cv2.imencode('.jpg', user_frames[user_id])
-		return buffer.tobytes(), 200, {'Content-Type': 'image/jpeg'}
-	return "No frames available", 404
 
 
 class SignUpPage(MethodView):
@@ -260,6 +245,32 @@ class ProductPageInd(MethodView):
 		return render_template("product.html", data=data)
 
 
+@app.route('/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a'
+           '/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/<user_id>')
+def stream(user_id):
+	if user_frames:
+		_, buffer = cv2.imencode('.jpg', user_frames[user_id])
+		return buffer.tobytes(), 200, {'Content-Type': 'image/jpeg'}
+	return "No frames available", 404
+
+
+@app.route('/57152cbec2b16cbbfca4b135ab57740b83a47bcb/upload_frame', methods=['POST'])
+def upload_frame():
+	user_id = request.form.get('user_id')
+	if 'frame' not in request.files:
+		return "No frame found", 400
+
+	frame = request.files['frame'].read()
+
+	np_frame = np.frombuffer(frame, np.uint8)
+	image = cv2.imdecode(np_frame, cv2.IMREAD_COLOR)
+
+	if user_id:
+		user_frames[user_id] = image
+
+	return "Frame received", 200
+
+
 @app.route('/478cb55db6df5b5b4f9d38e081161edf/3ec984b8ebcb95979aafc140ab3175f7/afb3132ee624f40beae950c57ae0f3a5'
            '/5f16518ece37398319606c81556fc42b/<key>')
 def get_devices(key):
@@ -274,17 +285,11 @@ def get_devices(key):
 	return jsonify({"error": "Invalid credentials"}), 401
 
 
-lock = threading.Lock()
-
-
 @app.route('/5f16518ece37398319606c81556fc42b/key_generator/<username>/<password>')
 def key_generator(username, password):
 	valid_users = ("exfkey", "cxvkey")
 	valid_passwords = ("rrfcelDkey345", "445jgjdakeyfnk")
 	if username in valid_users and password in valid_passwords:
-		if datetime.now().minute == 0:
-			global rand_num
-			rand_num = random.randint(1000000, 100000000)
 		with lock:
 			return jsonify(rand_num)
 	return abort(404)
