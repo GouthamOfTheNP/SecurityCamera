@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+	<meta charset="UTF-8">
+	<title>Vigilance Solutions - {{ data["device"] }}</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel='icon' href="{{ url_for('static', filename='icon.ico') }}" type='image/x-icon'>
+	<link rel="stylesheet" type="text/css" href="../static/styles.css">
+</head>
+<body>
+<header>
+	<nav>
+		<ul class="navbar">
+			<li><a href="/">Home</a></li>
+			<li><a href="/security-camera">Security Cameras</a></li>
+			<li><a href="/mobile-app">Mobile App</a></li>
+			<li></li>
+			{% if not session['logged_in'] %}
+			<li><a href="/signup" class="signup-btn" id="signup">Signup</a></li>
+			<li></li>
+			<li><a href="/login" class="signup-btn" id="login">Login</a></li>
+			{% endif %}
+			{% if session['logged_in'] %}
+			<li><a href="/logout" class="signup-btn" id="logout">Logout</a></li>
+			{% endif %}
+		</ul>
+	</nav>
+	<br> <br>
+	<h1>{{ data["device"] }}</h1>
+</header>
+<div class="spacing">
+	<div class="card" style="width: 14rem; padding-left: 10px; padding-top: 10px; display:inline; float:left;">
+		<img src="{{ url_for('static', filename='product_images/' + data['image']) }}" alt="Device image">
+		<div class="card-body">
+			<h5 class="card-title">{{ data["device"] }} </h5>
+			<h5 class="card-title">In Stock: {{ data["stock"] }} Items</h5>
+		</div>
+	</div>
+	&nbsp;&nbsp;&nbsp;&nbsp;
+</div>
+<footer>
+	<p>
+		&copy; 2024 Vigilance Solutions. All rights reserved. |
+		<a href="/privacy">Privacy Policy</a>
+	</p>
+</footer>
+</body>
+</html>
