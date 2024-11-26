@@ -2,7 +2,7 @@
 <html lang="en-us">
 <head>
 	<meta charset="UTF-8">
-	<title>Vigilance Solutions</title>
+	<title>Vigilance Solutions - Products</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel='icon' href="{{ url_for('static', filename='icon.ico') }}" type='image/x-icon'>
 	<link rel="stylesheet" type="text/css" href="../static/styles.css">
@@ -12,6 +12,7 @@
 		<nav>
 			<ul class="navbar">
 				<li><a href="/">Home</a></li>
+				<li><a href="/security-camera">Security Cameras</a></li>
 				<li><a href="/mobile-app">Mobile App</a></li>
 				<li></li>
 				{% if not session['logged_in'] %}
@@ -29,13 +30,16 @@
 	</header>
 	<div class="spacing">
 	{%for data_single in data%}
-		<div class="card" style="width: 14rem; padding-left: 10px; padding-top: 10px; display:inline; float:left;">
-			<img src="{{ url_for('static', filename='product_images/' + data_single.image) }}" alt="Device image">
-			<div class="card-body">
-				<h5 class="card-title">{{ data_single.device }} </h5>
-				<h5 class="card-title">In Stock: {{ data_single.stock }} Items</h5>
+		<a href="/product/{{ data_single.identifier }}" class="card-link-a">
+			<div class="card" style="width: 14rem; padding-left: 10px; padding-top: 10px; margin-bottom: 15px; display:inline; float:left;">
+				<img src="{{ url_for('static', filename='product_images/' + data_single.image) }}" alt="Device image">
+				<div class="card-body">
+					<h5 class="card-title">{{ data_single.device }} </h5>
+					<h5 class="card-title">In Stock: {{ data_single.stock }} Items</h5>
+					<h5 class="card-title">${{ data_single.price }}</h5>
+				</div>
 			</div>
-		</div>
+		</a>
 		&nbsp;&nbsp;&nbsp;&nbsp;
 	{%endfor%}
 	</div>

@@ -25,18 +25,21 @@
 			{% endif %}
 		</ul>
 	</nav>
-	<br> <br>
-	<h1>{{ data["device"] }}</h1>
 </header>
-<div class="spacing">
-	<div class="card" style="width: 14rem; padding-left: 10px; padding-top: 10px; display:inline; float:left;">
-		<img src="{{ url_for('static', filename='product_images/' + data['image']) }}" alt="Device image">
-		<div class="card-body">
-			<h5 class="card-title">{{ data["device"] }} </h5>
-			<h5 class="card-title">In Stock: {{ data["stock"] }} Items</h5>
+<div id="single-product-container">
+	<div id="single-product-box">
+		<div id="single-product-image" style="width: 50%; height: auto;">
+			<img src="{{ url_for('static', filename='product_images/' + data['image']) }}" alt="Device image">
 		</div>
+		<div id="single-product-box-content">
+			<h1 id="single-product-title">{{ data["device"] }} </h1>
+			<p>{{ data["description"] }}</p>
+			<h3 id="single-product-stock">In Stock: {{ data["stock"] }} Items <br> <br> ${{ data["price"] }} <br> <br>
+			</h3>
+			<button class="single-product-cart-btn">Add to Cart</button>
+		</div>
+		&nbsp;&nbsp;&nbsp;&nbsp;
 	</div>
-	&nbsp;&nbsp;&nbsp;&nbsp;
 </div>
 <footer>
 	<p>
