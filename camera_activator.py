@@ -9,7 +9,9 @@ with open("device_id.txt", "r") as f:
 	info = f.readlines()
 	device = info[0]
 
-for username, devices in requests.get(DB_URL).json():
+for username, email, devices in requests.get(DB_URL).json():
 	if devices:
 		with open("device_id.txt", "a") as f:
-			f.write(f"{username}:\n")
+			f.write(f"{username}\n")
+		with open("emails.txt", "w") as f:
+			f.write(f"{email}\n")

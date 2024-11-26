@@ -5,18 +5,21 @@ from PyQt6.QtWidgets import (QApplication, QPushButton, QLabel, QLineEdit, QDial
                              QMessageBox, QFileDialog)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
-from werkzeug.serving import connection_dropped_errors
-
 from db_functions import create_devices_db
 
 create_devices_db()
+
+
+def edit():
+	edit_dialog = EditDialog()
+	edit_dialog.exec()
 
 
 class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
 		self.setWindowTitle('Device Management System: Peak State')
-		self.setMinimumSize(500, 500)
+		self.setMinimumSize(700, 700)
 
 		file_menu_item = self.menuBar().addMenu('&File')
 		help_menu_item = self.menuBar().addMenu('&Help')
@@ -25,7 +28,7 @@ class MainWindow(QMainWindow):
 		add_device_action.triggered.connect(self.add_device)
 		file_menu_item.addAction(add_device_action)
 
-		refresh_devices_action = QAction(QIcon("icons/refresh-button.png"), 'Device', self)
+		refresh_devices_action = QAction(QIcon("icons/refresh-button.png"), 'Refresh Devices', self)
 		refresh_devices_action.triggered.connect(self.refresh_devices)
 		file_menu_item.addAction(refresh_devices_action)
 
@@ -42,8 +45,8 @@ class MainWindow(QMainWindow):
 		file_menu_item.addAction(search_action)
 
 		self.table = QTableWidget()
-		self.table.setColumnCount(5)
-		self.table.setHorizontalHeaderLabels(['ID', 'Device', 'Stock', 'Identification', 'Image'])
+		self.table.setColumnCount(7)
+		self.table.setHorizontalHeaderLabels(['ID', 'Device', 'Stock', 'Price', 'Identification', 'Description', 'Image'])
 		self.table.verticalHeader().setVisible(False)
 		self.setCentralWidget(self.table)
 
@@ -56,11 +59,14 @@ class MainWindow(QMainWindow):
 		self.addToolBar(toolbar)
 		self.status_bar = QStatusBar()
 		self.setStatusBar(self.status_bar)
+		print(type(self.table.currentRow()))
 		self.table.cellClicked.connect(self.cell_clicked)
+		self.table.cellChanged.connect(self.cell_clicked)
+		self.table.currentCellChanged.connect(self.cell_clicked)
 
 	def cell_clicked(self):
 		edit_button = QPushButton('Edit Device')
-		edit_button.clicked.connect(self.edit)
+		edit_button.clicked.connect(edit)
 
 		delete_button = QPushButton('Delete Device')
 		delete_button.clicked.connect(self.delete)
@@ -69,14 +75,9 @@ class MainWindow(QMainWindow):
 		if children:
 			for child in children:
 				self.status_bar.removeWidget(child)
-
-		self.status_bar.addWidget(edit_button)
-		self.status_bar.addWidget(delete_button)
-
-	@staticmethod
-	def edit():
-		edit_dialog = EditDialog()
-		edit_dialog.exec()
+		if self.table.currentRow() != -1:
+			self.status_bar.addWidget(edit_button)
+			self.status_bar.addWidget(delete_button)
 
 	@staticmethod
 	def delete():
@@ -110,9 +111,8 @@ class MainWindow(QMainWindow):
 		about_dialog = AboutDialog()
 		about_dialog.exec()
 
-	@staticmethod
-	def refresh_devices():
-		main_window.load_data()
+	def refresh_devices(self):
+		self.load_data()
 
 	@staticmethod
 	def support():
@@ -125,7 +125,7 @@ class InsertDialog(QDialog):
 		super().__init__()
 		self.file_path = None
 		self.setWindowTitle('Add Student')
-		self.setFixedSize(300, 200)
+		self.setFixedSize(400, 250)
 
 		layout = QVBoxLayout()
 
@@ -137,9 +137,17 @@ class InsertDialog(QDialog):
 		self.stock.setPlaceholderText("Stock")
 		layout.addWidget(self.stock)
 
+		self.price = QLineEdit()
+		self.price.setPlaceholderText("Price")
+		layout.addWidget(self.price)
+
 		self.identification = QLineEdit()
 		self.identification.setPlaceholderText("Identification")
 		layout.addWidget(self.identification)
+
+		self.desc = QLineEdit()
+		self.desc.setPlaceholderText("Description")
+		layout.addWidget(self.desc)
 
 		self.file_button = QPushButton("Select Image")
 		self.file_button.clicked.connect(self.open_file_dialog)
@@ -160,16 +168,17 @@ class InsertDialog(QDialog):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
 		if (self.device_name.text() != "" and self.stock.text() != "" and self.identification.text() != ""
-				and self.file_path != ""):
+				and self.desc.text() != "" and self.price.text() != "" and self.file_path != ""):
 			if "static/product_images/" in self.file_path:
-				cursor.execute('INSERT INTO devices (device, stock, identifier, image) VALUES (?, ?, ?, ?)',
-			               (self.device_name.text(), self.stock.text(), self.identification.text(),
-			                str(self.file_path).split('static/product_images/')[-1]))
+				cursor.execute(
+					'INSERT INTO devices (device, stock, price, identifier, description, image) VALUES (?, ?, ?, ?, ?, ?)',
+					(self.device_name.text(), self.stock.text(), self.price.text(), self.identification.text(),
+					 self.desc.text().replace("\n", "<br>"), str(self.file_path).split('static/product_images/')[-1]))
+				connection.commit()
+				connection.close()
+				self.close()
 			else:
 				QMessageBox.information(self, "Error", "Please select a valid image file located in the static folder")
-			connection.commit()
-			connection.close()
-			self.close()
 		else:
 			QMessageBox.information(self, "Error", "Please fill in all required fields.")
 
@@ -215,11 +224,17 @@ class EditDialog(QDialog):
 		super().__init__()
 		self.file_path = None
 		self.setWindowTitle('Edit Device')
-		self.setFixedSize(300, 200)
+		self.setFixedSize(400, 250)
 
 		layout = QVBoxLayout()
 
 		index = main_window.table.currentRow()
+		if index == -1:
+			QMessageBox.warning(self, "No Selection", "Please select a device to edit.")
+			self.close()
+			self.close()
+			return
+
 		device_name = main_window.table.item(index, 1).text()
 		self.device_name = QLineEdit(device_name)
 		self.device_name.setPlaceholderText("Device Name")
@@ -230,12 +245,22 @@ class EditDialog(QDialog):
 		self.stock.setPlaceholderText("Stock")
 		layout.addWidget(self.stock)
 
-		identification = main_window.table.item(index, 3).text()
+		price = main_window.table.item(index, 3).text()
+		self.price = QLineEdit(price)
+		self.price.setPlaceholderText("Price")
+		layout.addWidget(self.price)
+
+		identification = main_window.table.item(index, 4).text()
 		self.identification = QLineEdit(identification)
 		self.identification.setPlaceholderText("ID")
 		layout.addWidget(self.identification)
 
-		self.image_path = main_window.table.item(index, 4).text()
+		desc = main_window.table.item(index, 5).text()
+		self.desc = QLineEdit(desc)
+		self.desc.setPlaceholderText("Description")
+		layout.addWidget(self.desc)
+
+		self.image_path = main_window.table.item(index, 6).text() if not None else "aviciitierlist.png"
 		self.file_button = QPushButton("Select Image")
 		self.file_button.clicked.connect(self.open_file_dialog)
 		layout.addWidget(self.file_button)
@@ -253,23 +278,29 @@ class EditDialog(QDialog):
 		                                                '*.png *.jpg *.jpeg *.svg *.webp *.tiff')
 		if self.file_path:
 			print(f"Selected file: {self.file_path}")
+			self.file_path = str(self.file_path).split('/')[-1]
 
 	def edit_device(self):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
-		if "/" not in self.image_path or "static/product_images/" in self.file_path:
-			cursor.execute("UPDATE devices SET device = ?, stock = ?, identifier = ?, image = ? WHERE id = ?",
-		               (self.device_name.text(), self.stock.text(), self.identification.text(),
-		                self.file_path if self.file_path is not None else self.image_path, self.s_id))
+		if (self.device_name.text() != "" and self.stock.text() != "" and self.identification.text() != ""
+					and self.desc.text() != "" and self.price.text() != "" and self.file_path != ""):
+			if self.image_path is not None and ("/" not in self.image_path or "static/product_images/" in self.file_path):
+				cursor.execute(
+					"UPDATE devices SET device = ?, stock = ?, price = ?, identifier = ?, description = ?, image = ? WHERE id = ?",
+					(self.device_name.text(), self.stock.text(), self.price.text(), self.identification.text(),
+					 self.desc.text().replace("\n", "<br>"), self.file_path if self.file_path is not None else self.image_path,
+					 self.s_id))
+				connection.commit()
+				connection.close()
+				self.close()
+			else:
+				QMessageBox.information(self, "Error", "Please select a valid image file located in the static folder")
 		else:
-			QMessageBox.information(self, "Error", "Please select a valid image file located in the static folder")
-		connection.commit()
-		connection.close()
-		self.close()
+			QMessageBox.information(self, "Error", "Please fill in all required fields")
 		main_window.load_data()
 
 
-# This class is used to delete students
 class DeleteDialog(QDialog):
 	def __init__(self):
 		super().__init__()
@@ -306,7 +337,6 @@ class DeleteDialog(QDialog):
 		confirmation_widget.setText('Record Deleted')
 
 
-# This is the about page
 class AboutDialog(QMessageBox):
 	def __init__(self):
 		super().__init__()
@@ -323,7 +353,7 @@ class SupportDialog(QMessageBox):
 		super().__init__()
 		self.setWindowTitle('Support')
 		content = """
-Use the plus button to add a device's name, number of items of that item in availability, and the identification tag for the product type.
+Use the plus button to add a device's name, number of items of that item in availability, its description, and the identification tag for the product type.
 
 Use the magnifying glass button to search for a specific item by its identifier or name.
 
@@ -335,7 +365,6 @@ Author: Goutham Pedinedi"""
 		self.setText(content)
 
 
-# This is the execution code
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
 	main_window = MainWindow()

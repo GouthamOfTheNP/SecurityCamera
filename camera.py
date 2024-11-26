@@ -8,9 +8,13 @@ from datetime import datetime
 import requests
 
 
-SERVER_URL = "http://127.0.0.1:5000/upload_frame"
+SERVER_URL = "https://vigilancesolutions.pythonanywhere.com/57152cbec2b16cbbfca4b135ab57740b83a47bcb/upload_frame"
 with open("emails.txt", "r") as file:
 	receiver_email = [email.strip() for email in file.readlines()]
+
+with open("device_id.txt", "r") as f:
+	info = f.readlines()
+	user_id = info[1]
 
 
 def create_video(video_frames, video_name):
@@ -122,15 +126,10 @@ while True:
 
 	_, buffer = cv2.imencode('.jpg', frame)
 	frame_data = buffer.tobytes()
-	with open("device_id.txt", "r") as f:
-		info = f.readlines()
-		user_id = info[1]
 	response = requests.post(SERVER_URL, files={'frame': frame_data}, data={'user_id': user_id})
 	if response.status_code != 200:
 		print(response)
 		print(f"Error: Failed to upload frame, status code {response.status_code}")
-	else:
-		print("Frame uploaded successfully")
 
 	cv2.imshow("Video", frame)
 	key = cv2.waitKey(1)

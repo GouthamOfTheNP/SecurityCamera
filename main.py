@@ -217,12 +217,12 @@ class SecurityCameraPage(MethodView):
 	def get(self):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
-		cursor.execute("SELECT device, stock, image, identifier FROM devices")
+		cursor.execute("SELECT device, stock, price, image, identifier FROM devices")
 		results = cursor.fetchall()
 		connection.commit()
 		connection.close()
 		data = [
-			{"device": result[0], "stock": result[1], "image": result[2], "identifier": result[3]}
+			{"device": result[0], "stock": result[1], "price": result[2], "image": result[3], "identifier": result[4]}
 			for result in results
 		]
 		return render_template("security_camera.html", data=data)
@@ -237,11 +237,11 @@ class ProductPageInd(MethodView):
 	def get(self, product_id):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
-		cursor.execute("SELECT device, stock, image FROM devices where identifier = ?", (product_id,))
+		cursor.execute("SELECT device, stock, price, description, image FROM devices where identifier = ?", (product_id,))
 		results = cursor.fetchone()
 		connection.commit()
 		connection.close()
-		data = {"device": results[0], "stock": results[1], "image": results[2]}
+		data = {"device": results[0], "stock": results[1], "price": results[2], "description": results[3], "image": results[4]}
 		return render_template("product.html", data=data)
 
 
@@ -278,7 +278,7 @@ def get_devices(key):
 	                            "/445jgjdakeyfnk").json():
 		connection = sqlite3.connect("users.db")
 		cursor = connection.cursor()
-		cursor.execute("SELECT username, devices FROM users")
+		cursor.execute("SELECT username, email, devices FROM users")
 		devices = cursor.fetchall()
 		connection.close()
 		return jsonify(devices)
@@ -297,12 +297,12 @@ def key_generator(username, password):
 
 @app.before_request
 def store_previous_page():
-	if (request.endpoint not in ['login_page', 'signup_page', 'logout_page', 'forgot_page']
-				and not request.endpoint.startswith('static') and
-				request.method == 'GET' and not "/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d"
-				                                "/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a"
-				                                "/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/"
-				                                in request.url):
+	if (request.endpoint is not None and request.endpoint not in
+				['login_page', 'signup_page', 'logout_page', 'forgot_page'] and not request.endpoint.startswith('static')
+				and request.method == 'GET' and not "/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d"
+				                                    "/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a"
+				                                    "/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/"
+				                                    in request.url):
 		session['previous_page'] = request.url
 
 
