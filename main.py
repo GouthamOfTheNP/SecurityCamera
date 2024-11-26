@@ -141,7 +141,8 @@ class ForgotPage(MethodView):
 		connection = sqlite3.connect('users.db')
 		cursor = connection.cursor()
 		cursor.execute("SELECT username FROM users WHERE email=?", (email,))
-		username = username_hash(cursor.fetchone()[0], random.randint(0, 45))
+		if cursor.fetchone():
+			username = username_hash(cursor.fetchone()[0], random.randint(0, 45))
 		connection.commit()
 		cursor.close()
 		connection.close()
