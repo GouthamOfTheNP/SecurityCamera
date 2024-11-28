@@ -4,7 +4,7 @@ from db_functions import add_user, user_exists, create_users_db, verify_password
 from flask import render_template, request, Flask, session, redirect, url_for, jsonify, abort
 from flask.views import MethodView
 from flask_cors import CORS
-from wtforms import Form, StringField
+from wtforms import Form, StringField, PasswordField
 from wtforms.fields.simple import SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 from sendemailpy3 import send_gmail
@@ -53,9 +53,26 @@ update_rand_num()
 
 class MainPage(MethodView):
 	def get(self):
+		device_form = DeviceForm()
 		if session.get('logged_in'):
-			return render_template("index.html", username=session.get('username'))
-		return render_template("index.html")
+			return render_template("index.html", username=session.get('username'), device_form=device_form)
+		return render_template("index.html", device_form=device_form)
+
+	def post(self):
+		device_form = DeviceForm(request.form)
+		device = str(device_form.device_id.data)
+		error_code = "Device successfully added. If the information is correct, your device will start."
+		try:
+			connection = sqlite3.connect("users.db")
+			cursor = connection.cursor()
+			cursor.execute("UPDATE users SET devices=COALESCE(devices, '') || ? WHERE username=?",
+			               (device + ",", session.get('username')))
+			connection.commit()
+			cursor.close()
+			connection.close()
+		except Exception as e:
+			error_code = "Invalid username."
+		return render_template("index.html", device_form=device_form, error_code=error_code)
 
 
 class SignUpPage(MethodView):
@@ -142,7 +159,7 @@ class ForgotPage(MethodView):
 		cursor = connection.cursor()
 		cursor.execute("SELECT username FROM users WHERE email=?", (email,))
 		result = cursor.fetchone()
-		if result is not None:  
+		if result is not None:
 			username = username_hash(result[0], random.randint(0, 45))
 		connection.commit()
 		cursor.close()
@@ -150,7 +167,7 @@ class ForgotPage(MethodView):
 		if verification_tuple[0]:
 			session["reset_token"] = True
 			send_gmail("Password Reset",
-			           f"Password reset link for Vigilance Solutions: {request.url_root.rstrip("/") + 
+			           f"Password reset link for Vigilance Solutions: {request.url_root.rstrip("/") +
 			                                                           url_for("reset_page", user=username)}",
 			           verification_tuple[1], os.getenv("USERNAME_SENDER"), os.getenv("PASSWORD_SENDER"))
 		else:
@@ -239,11 +256,13 @@ class ProductPageInd(MethodView):
 	def get(self, product_id):
 		connection = sqlite3.connect("devices.db")
 		cursor = connection.cursor()
-		cursor.execute("SELECT device, stock, price, description, image FROM devices where identifier = ?", (product_id,))
+		cursor.execute("SELECT device, stock, price, description, image FROM devices where identifier = ?",
+		               (product_id,))
 		results = cursor.fetchone()
 		connection.commit()
 		connection.close()
-		data = {"device": results[0], "stock": results[1], "price": results[2], "description": results[3], "image": results[4]}
+		data = {"device": results[0], "stock": results[1], "price": results[2], "description": results[3],
+		        "image": results[4]}
 		return render_template("product.html", data=data)
 
 
@@ -300,11 +319,11 @@ def key_generator(username, password):
 @app.before_request
 def store_previous_page():
 	if (request.endpoint is not None and request.endpoint not in
-				['login_page', 'signup_page', 'logout_page', 'forgot_page'] and not request.endpoint.startswith('static')
-				and request.method == 'GET' and not "/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d"
-				                                    "/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a"
-				                                    "/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/"
-				                                    in request.url):
+			['login_page', 'signup_page', 'logout_page', 'forgot_page'] and not request.endpoint.startswith('static')
+			and request.method == 'GET' and not "/stream/b8ac99d7d8a6feb99896856d7b67b6d4df6da18d"
+			                                    "/5ee174eb9985595de358d51f3c8dfd9e2fd72e6a"
+			                                    "/caa383196608a0d23ebb2158cb3807a6bd760b6364c6a8b26d1f5c54888242a9/"
+			                                    in request.url):
 		session['previous_page'] = request.url
 
 
@@ -343,18 +362,18 @@ def username_decrypt(username):
 class SignupForm(Form):
 	email = StringField("Email: ", validators=[DataRequired(), Email()])
 	username = StringField("Username: ", validators=[DataRequired()])
-	password = StringField("Password: ", validators=[DataRequired(),
-	                                                 Length(min=8,
-	                                                        message="Password must be at least 8 characters long")])
-	confirm_password = StringField("Confirm Password: ",
-	                               validators=[DataRequired(),
-	                                           EqualTo('password', message="Passwords must match")])
+	password = PasswordField("Password: ", validators=[DataRequired(),
+	                                                   Length(min=8,
+	                                                          message="Password must be at least 8 characters long")])
+	confirm_password = PasswordField("Confirm Password: ",
+	                                 validators=[DataRequired(),
+	                                             EqualTo('password', message="Passwords must match")])
 	submit = SubmitField("Submit")
 
 
 class LoginForm(Form):
 	username = StringField("Username: ", validators=[DataRequired()])
-	password = StringField("Password: ", validators=[DataRequired()])
+	password = PasswordField("Password: ", validators=[DataRequired()])
 	submit = SubmitField("Submit")
 
 
@@ -364,12 +383,18 @@ class ForgotForm(Form):
 
 
 class ResetForm(Form):
-	password = StringField("New Password: ", validators=[DataRequired(),
-	                                                     Length(min=8,
-	                                                            message="Password must be at least 8 characters long")])
-	confirm_password = StringField("Confirm Password: ",
-	                               validators=[DataRequired(),
-	                                           EqualTo('password', message="Passwords must match")])
+	password = PasswordField("New Password: ", validators=[DataRequired(),
+	                                                       Length(min=8,
+	                                                              message="Password must be at least 8 characters long")])
+	confirm_password = PasswordField("Confirm Password: ",
+	                                 validators=[DataRequired(),
+	                                             EqualTo('password', message="Passwords must match")])
+	submit = SubmitField("Submit")
+
+
+class DeviceForm(Form):
+	device_id = StringField("Device ID: ", validators=[DataRequired(), Length(min=14, message="Device ID must be at "
+	                                                                                          "least 14 characters long")])
 	submit = SubmitField("Submit")
 
 
