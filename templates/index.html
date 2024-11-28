@@ -72,12 +72,22 @@
 		</form>
 	</div>
 	<script>
+		window.onload = function() {
+			const formState = localStorage.getItem('formState');
+
+			if (formState === 'expanded') {
+				document.getElementById('form-container').style.display = 'block';
+			}
+		};
+
 		document.getElementById('toggle-btn').addEventListener('click', function() {
 			var formContainer = document.getElementById('form-container');
 			if (formContainer.style.display === 'none') {
 				formContainer.style.display = 'block';
+				localStorage.setItem('formState', 'expanded');
 			} else {
 				formContainer.style.display = 'none';
+				localStorage.setItem('formState', 'collapsed');
 			}
 		});
 	</script>
@@ -85,7 +95,7 @@
 	<h3>
 		View your cameras
 	</h3>
-	<img id="live-stream" src="" alt="Not available. Please buy a camera or connect it to your account." />
+	<img id="live-stream" src="" alt="Not available. Please buy a camera and/or connect it to your account." />
 	{{ buffer }}
 </section>
 {% else %}
