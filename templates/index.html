@@ -62,7 +62,27 @@
 		<br />
 		<a href="/mobile-app">Download our mobile app</a>
 		<br />
-		<br />
+	</h3>
+	<button id="toggle-btn">Add a Camera</button>
+	<div id="form-container">
+		<form action="/" method="post">
+			{{ device_form.device_id.label }} {{ device_form.device_id }} <br />
+			{{ device_form.submit }} <br /> <br />
+			{{ error_code }} <br />
+		</form>
+	</div>
+	<script>
+		document.getElementById('toggle-btn').addEventListener('click', function() {
+			var formContainer = document.getElementById('form-container');
+			if (formContainer.style.display === 'none') {
+				formContainer.style.display = 'block';
+			} else {
+				formContainer.style.display = 'none';
+			}
+		});
+	</script>
+	<br />
+	<h3>
 		View your cameras
 	</h3>
 	<img id="live-stream" src="" alt="Not available. Please buy a camera or connect it to your account." />
