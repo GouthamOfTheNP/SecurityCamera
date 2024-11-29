@@ -3,7 +3,7 @@
 ## Overview
 The Security Camera Project is designed to provide motion detection and real-time video streaming capabilities, using Python, OpenCV, and PyQt6. The software is integrated with a live video feed server, email notifications, and advanced features like motion detection and video processing, making it an essential part of security camera solutions.
 
-This project is part of a commercial product but is available under the MIT License for open usage. While the software can be used freely, the end product should not be redistributed in any form.
+This project is part of a future commercial product but is available under the MIT License for open usage. While the software can be used freely, the end product should not be redistributed in any form.
 
 ## Prototype Link
 Explore the live prototype: [Vigilance Solutions Prototype](https://vigilancesolutions.pythonanywhere.com/)
