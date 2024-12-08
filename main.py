@@ -1,6 +1,9 @@
 import random
+import threading
 from datetime import datetime
-from db_functions import add_user, user_exists, create_users_db, verify_password, verify_email, create_devices_db
+import os
+import sqlite3
+import time
 from flask import render_template, request, Flask, session, redirect, url_for, jsonify, abort
 from flask.views import MethodView
 from flask_cors import CORS
@@ -8,14 +11,11 @@ from wtforms import Form, StringField, PasswordField
 from wtforms.fields.simple import SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 from sendemailpy3 import send_gmail
-import os
-import sqlite3
-import time
 import numpy as np
 import cv2
 import requests
-import threading
 import bcrypt
+from db_functions import add_user, user_exists, create_users_db, verify_password, verify_email, create_devices_db
 
 app = Flask(__name__)
 CORS(app)
@@ -70,6 +70,7 @@ class MainPage(MethodView):
 			connection.commit()
 			cursor.close()
 			connection.close()
+
 		except Exception as e:
 			error_code = "Invalid username."
 		return render_template("index.html", device_form=device_form, error_code=error_code)
@@ -166,10 +167,7 @@ class ForgotPage(MethodView):
 		connection.close()
 		if verification_tuple[0]:
 			session["reset_token"] = True
-			send_gmail("Password Reset",
-			           f"Password reset link for Vigilance Solutions: {request.url_root.rstrip("/") +
-			                                                           url_for("reset_page", user=username)}",
-			           verification_tuple[1], os.getenv("USERNAME_SENDER"), os.getenv("PASSWORD_SENDER"))
+			send_gmail("Password Reset", f"Password reset link for Vigilance Solutions: {request.url_root.rstrip('/') + url_for('reset_page', user=username)}", verification_tuple[1], os.getenv("USERNAME_SENDER"), os.getenv("PASSWORD_SENDER"))
 		else:
 			error_code = "Invalid email address"
 		return render_template("forgot.html", forgot_form=forgot_form, error_code=error_code)
@@ -410,4 +408,4 @@ app.add_url_rule('/product/<product_id>', view_func=ProductPageInd.as_view('prod
 app.add_url_rule('/reset/<user>', view_func=ResetPage.as_view('reset_page'))
 
 if __name__ == '__main__':
-	app.run()
+	app.run(debug=True)
