@@ -340,14 +340,11 @@ def username_hash(username, salt):
 def username_decrypt(username):
 	salt = []
 	username = list(username)
-	print(username)
-	print(len(username))
 	for char in username[:]:
 		if char.isdigit():
 			salt.append(username.pop(username.index(char)))
 	salt = int(''.join(salt))
 	alpha_decrypt = {k: v + (52 if v <= salt else 0) for k, v in alphabets.items()}
-	print(alpha_decrypt)
 
 	decrypted_username = []
 	for char in username:
@@ -408,4 +405,4 @@ app.add_url_rule('/product/<product_id>', view_func=ProductPageInd.as_view('prod
 app.add_url_rule('/reset/<user>', view_func=ResetPage.as_view('reset_page'))
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	app.run()
