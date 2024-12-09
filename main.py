@@ -1,6 +1,4 @@
 import random
-import threading
-from datetime import datetime
 import os
 import sqlite3
 import time
@@ -13,7 +11,6 @@ from wtforms.validators import DataRequired, Email, Length, EqualTo
 from sendemailpy3 import send_gmail
 import numpy as np
 import cv2
-import requests
 import bcrypt
 from db_functions import add_user, user_exists, create_users_db, verify_password, verify_email, create_devices_db
 
@@ -36,19 +33,6 @@ alphabets = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i'
 alpha_inverted = {v: k for k, v in alphabets.items()} | {v + 52: k for k, v in alphabets.items()}
 
 rand_num = random.randint(100000, 10000000)
-lock = threading.Lock()
-
-
-def update_rand_num():
-	global rand_num
-	with lock:
-		rand_num = random.randint(1000000, 100000000)
-	now = datetime.now()
-	seconds_until_next_hour = 3600 - (now.minute * 60 + now.second)
-	threading.Timer(seconds_until_next_hour, update_rand_num).start()
-
-
-update_rand_num()
 
 
 class MainPage(MethodView):
@@ -291,17 +275,21 @@ def upload_frame():
 
 
 @app.route('/478cb55db6df5b5b4f9d38e081161edf/3ec984b8ebcb95979aafc140ab3175f7/afb3132ee624f40beae950c57ae0f3a5'
-           '/5f16518ece37398319606c81556fc42b/<key>')
-def get_devices(key):
-	if int(key) == requests.get(f"{request.host_url.rstrip('/')}/5f16518ece37398319606c81556fc42b/key_generator/exfkey"
-	                            "/445jgjdakeyfnk").json():
-		connection = sqlite3.connect("users.db")
-		cursor = connection.cursor()
-		cursor.execute("SELECT username, email, devices FROM users")
-		devices = cursor.fetchall()
-		connection.close()
-		return jsonify(devices)
-	return jsonify({"error": "Invalid credentials"}), 401
+           '/5f16518ece37398319606c81556fc42b', methods=['POST'])
+def get_devices():
+	metadata_key = request.headers.get('X-Metadata-Key')
+	if metadata_key:
+		if metadata_key == str(rand_num):
+			connection = sqlite3.connect("users.db")
+			cursor = connection.cursor()
+			cursor.execute("SELECT username, email, devices FROM users")
+			devices = cursor.fetchall()
+			connection.close()
+			return jsonify(devices)
+		else:
+			return jsonify({"error": "Invalid metadata key"}), 401
+	else:
+		return jsonify({"error": "Metadata key missing"}), 400
 
 
 @app.route('/5f16518ece37398319606c81556fc42b/key_generator/<username>/<password>')
@@ -309,8 +297,7 @@ def key_generator(username, password):
 	valid_users = ("exfkey", "cxvkey")
 	valid_passwords = ("rrfcelDkey345", "445jgjdakeyfnk")
 	if username in valid_users and password in valid_passwords:
-		with lock:
-			return jsonify(rand_num)
+		return jsonify(rand_num)
 	return abort(404)
 
 
@@ -405,4 +392,4 @@ app.add_url_rule('/product/<product_id>', view_func=ProductPageInd.as_view('prod
 app.add_url_rule('/reset/<user>', view_func=ResetPage.as_view('reset_page'))
 
 if __name__ == '__main__':
-	app.run()
+	app.run(debug=True)
