@@ -392,4 +392,4 @@ app.add_url_rule('/product/<product_id>', view_func=ProductPageInd.as_view('prod
 app.add_url_rule('/reset/<user>', view_func=ResetPage.as_view('reset_page'))
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	app.run()
